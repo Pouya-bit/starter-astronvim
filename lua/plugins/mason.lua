@@ -41,6 +41,13 @@ return {
         "github:nvim-java/mason-registry",
         "github:mason-org/mason-registry", -- default registry
       }
+      -- Explicitly ensure Java tools are installed
+      opts.ensure_installed = opts.ensure_installed or {}
+      vim.list_extend(opts.ensure_installed, {
+        "java-test",
+        "spring-boot-tools",
+        -- Add any other tools you want Mason to always keep installed here
+      })
     end,
   },
 }
