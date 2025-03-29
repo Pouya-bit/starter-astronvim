@@ -20,5 +20,7 @@ return {
       dimInactive = true,
       terminalColors = true,
     })
+    -- Set the colorscheme after setup
+    vim.cmd("colorscheme kanagawa")
   end,
 }

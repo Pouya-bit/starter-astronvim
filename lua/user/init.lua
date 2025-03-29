@@ -1,4 +1,3 @@
 return {
-    colorscheme = "kanagawa",
   }
   
