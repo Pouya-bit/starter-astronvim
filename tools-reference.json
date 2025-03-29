@@ -1,0 +1,23 @@
+{
+  "javascript-tools": {
+    "lsp": [
+      "tsserver"
+    ],
+    "formatters": [
+      "prettierd",
+      "eslint_d"
+    ],
+    "treesitter-parsers": [
+      "javascript",
+      "typescript",
+      "tsx",
+      "html",
+      "css",
+      "json"
+    ],
+    "other-tools": [
+      "js-debug-adapter"
+    ]
+  },
+  "installation": "These tools will be automatically installed by Mason when you start Neovim with this configuration."
+} 

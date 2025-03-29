@@ -1,0 +1,78 @@
+{
+  "Console Log": {
+    "prefix": "log",
+    "body": [
+      "console.log($1);"
+    ],
+    "description": "Console log statement"
+  },
+  "Function": {
+    "prefix": "fn",
+    "body": [
+      "function ${1:name}(${2:params}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Function declaration"
+  },
+  "Arrow Function": {
+    "prefix": "afn",
+    "body": [
+      "const ${1:name} = (${2:params}) => {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Arrow function"
+  },
+  "Import Statement": {
+    "prefix": "imp",
+    "body": [
+      "import ${2:{ $3 \\}} from '$1';"
+    ],
+    "description": "Import statement"
+  },
+  "React Component": {
+    "prefix": "rcomp",
+    "body": [
+      "import React from 'react';",
+      "",
+      "const ${1:ComponentName} = (${2:props}) => {",
+      "\treturn (",
+      "\t\t<div>",
+      "\t\t\t$0",
+      "\t\t</div>",
+      "\t);",
+      "};",
+      "",
+      "export default $1;"
+    ],
+    "description": "React functional component"
+  },
+  "useEffect": {
+    "prefix": "uef",
+    "body": [
+      "useEffect(() => {",
+      "\t$1",
+      "}, [${2}]);"
+    ],
+    "description": "React useEffect hook"
+  },
+  "useState": {
+    "prefix": "ust",
+    "body": [
+      "const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState(${2:initialState});"
+    ],
+    "description": "React useState hook"
+  },
+  "Try Catch": {
+    "prefix": "trc",
+    "body": [
+      "try {",
+      "\t$1",
+      "} catch (error) {",
+      "\t$2",
+      "}"
+    ],
+    "description": "Try/catch block"
+  }
+} 
