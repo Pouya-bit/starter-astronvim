@@ -1,5 +1,3 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- Customize Mason plugins
 
 ---@type LazySpec
@@ -35,5 +33,14 @@ return {
         -- add more arguments for adding more debuggers
       },
     },
+  },
+  {
+    "williamboman/mason.nvim",
+    opts = function(_, opts)
+      opts.registries = {
+        "github:nvim-java/mason-registry",
+        "github:mason-org/mason-registry", -- default registry
+      }
+    end,
   },
 }

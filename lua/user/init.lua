@@ -1,0 +1,4 @@
+return {
+    colorscheme = "kanagawa",
+  }
+  
