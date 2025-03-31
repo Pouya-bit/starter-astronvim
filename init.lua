@@ -15,5 +15,8 @@ if not pcall(require, "lazy") then
   vim.cmd.quit()
 end
 
+-- Load compatibility fixes for deprecated functions
+require "user.lsp_compat"
+
 require "lazy_setup"
 require "polish"

@@ -94,16 +94,6 @@ return {
     },
   },
   {
-    "windwp/nvim-ts-autotag",
-    event = "InsertEnter",
-    config = function()
-      require("nvim-ts-autotag").setup({
-        enable = true,
-        filetypes = { "html", "xml", "javascriptreact", "typescriptreact", "tsx", "jsx" },
-      })
-    end,
-  },
-  {
     "jose-elias-alvarez/typescript.nvim",
     ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
     opts = function() return { server = require("astrolsp").config.tsserver } end,
