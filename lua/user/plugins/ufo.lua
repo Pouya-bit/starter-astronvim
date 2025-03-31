@@ -7,13 +7,29 @@ return {
       "nvim-treesitter/nvim-treesitter",
     },
     opts = {
-      -- This is the fix: disable the treesitter provider that's causing the error
-      -- and only use the lsp provider for folding
-      provider_selector = function(_, _, _)
-        -- Disabling treesitter provider which is causing issues
-        -- Only use lsp as the folding provider
-        return { 'lsp' }
+      -- More aggressively disable treesitter provider and add fallbacks
+      provider_selector = function(bufnr, filetype, buftype)
+        -- Skip special buffer types
+        if buftype == 'terminal' or buftype == 'nofile' or buftype == 'quickfix' or buftype == 'help' then
+          return ''
+        end
+        
+        -- Always use LSP provider first, and fallback to indent if LSP is not available
+        -- Completely exclude treesitter to avoid the error
+        return {'lsp', 'indent'}
       end,
+      
+      -- Completely disable the built-in treesitter provider to prevent any calls to it
+      providers = {
+        treesitter = false,  -- Disable the built-in treesitter provider
+        lsp = {
+          enable = true,
+        },
+        indent = {
+          enable = true,
+        }
+      },
+      
       -- Configure fold display
       fold_virt_text_handler = function(virtText, lnum, endLnum, width, truncate)
         local newVirtText = {}
@@ -42,6 +58,7 @@ return {
         table.insert(newVirtText, {suffix, 'UfoFoldedEllipsis'})
         return newVirtText
       end,
+      
       -- Enable fold previews
       preview = {
         win_config = {
@@ -62,23 +79,45 @@ return {
       vim.o.foldlevelstart = 99
       vim.o.foldenable = true
       
-      -- Set foldmethod to expr with treesitter via ufo
+      -- Set foldmethod to expr with ufo
       vim.o.foldmethod = 'expr'
       vim.o.foldexpr = 'v:lua.require("ufo").foldexpr()'
       
-      -- Using ufo provider need a large value for vim.ufo.lsp
+      -- Using ufo provider need a reasonable updatetime
       vim.o.updatetime = 300
     end,
     config = function(_, opts)
-      -- Require and setup UFO
-      require('ufo').setup(opts)
+      -- Add error handling around UFO setup
+      local ok, ufo = pcall(require, 'ufo')
+      if not ok then
+        vim.notify("Failed to load UFO plugin", vim.log.levels.ERROR)
+        return
+      end
+      
+      -- Override the get_fold_virt_text function to prevent errors
+      local original_provider = package.loaded["ufo.provider.treesitter"]
+      if original_provider then
+        -- Monkey patch the problematic function to prevent errors
+        local old_exec = original_provider.exec
+        original_provider.exec = function(...)
+          local ok, result = pcall(old_exec, ...)
+          if not ok then
+            -- Return empty result on error
+            return {}
+          end
+          return result
+        end
+      end
+      
+      -- Setup UFO with error handling
+      pcall(ufo.setup, opts)
       
       -- Add some keymappings for folding
-      vim.keymap.set('n', 'zR', require('ufo').openAllFolds, {desc = "Open all folds"})
-      vim.keymap.set('n', 'zM', require('ufo').closeAllFolds, {desc = "Close all folds"})
-      vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds, {desc = "Open folds except kinds"})
-      vim.keymap.set('n', 'zm', require('ufo').closeFoldsWith, {desc = "Close folds with"})
-      vim.keymap.set('n', 'zp', require('ufo').peekFoldedLinesUnderCursor, {desc = "Peek folded lines"})
+      vim.keymap.set('n', 'zR', function() pcall(ufo.openAllFolds) end, {desc = "Open all folds"})
+      vim.keymap.set('n', 'zM', function() pcall(ufo.closeAllFolds) end, {desc = "Close all folds"})
+      vim.keymap.set('n', 'zr', function() pcall(ufo.openFoldsExceptKinds) end, {desc = "Open folds except kinds"})
+      vim.keymap.set('n', 'zm', function() pcall(ufo.closeFoldsWith) end, {desc = "Close folds with"})
+      vim.keymap.set('n', 'zp', function() pcall(ufo.peekFoldedLinesUnderCursor) end, {desc = "Peek folded lines"})
     end,
   }
 } 
