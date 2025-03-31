@@ -29,7 +29,7 @@ return {
     -- override the LSP setup handler function based on server name
     setup_handlers = {
       -- add custom handler
-      -- tsserver = function(_, opts) require("typescript").setup { server = opts } end
+      tsserver = function(_, opts) require("typescript").setup { server = opts } end
     },
     -- Configure null-ls sources
     formatting = {
@@ -37,6 +37,48 @@ return {
       format_on_save = {
         enabled = true, -- Enable format on save globally
         allow_filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json", "html", "css" },
+      },
+    },
+  },
+  
+  -- Set up autocommands
+  autocmds = {
+    -- Auto format on save
+    format_on_save = {
+      {
+        event = "BufWritePre",
+        pattern = { "*.js", "*.jsx", "*.ts", "*.tsx", "*.css", "*.scss", "*.html", "*.json" },
+        desc = "Auto format JavaScript/TypeScript/React files before saving",
+        callback = function() vim.lsp.buf.format() end,
+      },
+    },
+    -- React syntax highlighting improvements
+    react_filetype = {
+      {
+        event = "BufRead",
+        pattern = { "*.jsx", "*.tsx" },
+        callback = function()
+          vim.bo.filetype = vim.bo.filetype == "javascriptreact" and "javascriptreact" or "typescriptreact"
+        end,
+      },
+    },
+  },
+
+  -- Custom mappings
+  mappings = {
+    n = {
+      -- React component generation
+      ["<leader>rc"] = { 
+        "<cmd>lua require('typescript').actions.addMissingImports()<CR>", 
+        desc = "Add missing imports" 
+      },
+      ["<leader>rf"] = { 
+        "<cmd>lua require('typescript').actions.fixAll()<CR>", 
+        desc = "Fix all TypeScript diagnostics" 
+      },
+      ["<leader>ro"] = { 
+        "<cmd>lua require('typescript').actions.organizeImports()<CR>", 
+        desc = "Organize imports"
       },
     },
   },
