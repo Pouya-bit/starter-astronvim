@@ -19,7 +19,7 @@ return {
       opts.ensure_installed = opts.ensure_installed or {}
       vim.list_extend(opts.ensure_installed, { 
         "prettierd", 
-        "eslint",
+        "eslint_d",  -- Using eslint_d for better performance
         "stylelint",
         "jsonlint" 
       })
@@ -63,6 +63,8 @@ return {
               },
               suggest = {
                 completeFunctionCalls = true,
+                includeCompletionsForModuleExports = true,
+                includeCompletionsWithObjectLiteralMethodSnippets = true,
               },
             },
             javascript = {
@@ -77,6 +79,8 @@ return {
               },
               suggest = {
                 completeFunctionCalls = true,
+                includeCompletionsForModuleExports = true,
+                includeCompletionsWithObjectLiteralMethodSnippets = true,
               },
             },
           },
@@ -96,7 +100,17 @@ return {
   {
     "jose-elias-alvarez/typescript.nvim",
     ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
-    opts = function() return { server = require("astrolsp").config.tsserver } end,
+    opts = function() 
+      return { 
+        server = require("astrolsp").config.tsserver,
+        -- Enable additional features
+        disable_commands = false,
+        debug = false,
+        go_to_source_definition = {
+          fallback = true,
+        },
+      }
+    end,
   },
 } 
 } 

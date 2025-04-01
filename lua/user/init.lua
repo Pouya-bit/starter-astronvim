@@ -21,9 +21,9 @@ return {
     -- add to the global LSP on_attach function
     -- @type fun(client, bufnr)
     on_attach = function(client, bufnr)
-      -- Enable inlay hints for JavaScript/TypeScript files
+      -- Enable inlay hints for JavaScript/TypeScript files with error handling
       if client.name == "tsserver" and vim.fn.has("nvim-0.10") == 1 then
-        vim.lsp.inlay_hint.enable(bufnr, true)
+        pcall(vim.lsp.inlay_hint.enable, bufnr, true)
       end
     end,
     -- override the LSP setup handler function based on server name
@@ -31,12 +31,38 @@ return {
       -- add custom handler
       tsserver = function(_, opts) require("typescript").setup { server = opts } end
     },
+    -- Enhanced LSP capabilities
+    capabilities = {
+      textDocument = {
+        completion = {
+          completionItem = {
+            snippetSupport = true,
+            resolveSupport = {
+              properties = {
+                "documentation",
+                "detail",
+                "additionalTextEdits",
+              },
+            },
+          },
+        },
+      },
+    },
     -- Configure null-ls sources
     formatting = {
       -- Set up default formatting tools
       format_on_save = {
-        enabled = true, -- Enable format on save globally
-        allow_filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "json", "html", "css" },
+        enabled = true,
+        allow_filetypes = { 
+          "javascript", 
+          "typescript", 
+          "javascriptreact", 
+          "typescriptreact", 
+          "json", 
+          "html", 
+          "css",
+          "scss" 
+        },
       },
     },
   },
@@ -67,7 +93,7 @@ return {
   -- Custom mappings
   mappings = {
     n = {
-      -- React component generation
+      -- React/TypeScript utilities
       ["<leader>rc"] = { 
         "<cmd>lua require('typescript').actions.addMissingImports()<CR>", 
         desc = "Add missing imports" 
