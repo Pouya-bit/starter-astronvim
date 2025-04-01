@@ -223,4 +223,14 @@ If you're seeing the error `attempt to index field 'eslint' (a nil value)` or `n
 
 3. **Restart Neovim** after making these changes.
 
-Both of these files have been created for you already. You just need to restart Neovim for the changes to take effect. 
+Both of these files have been created for you already. You just need to restart Neovim for the changes to take effect.
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "java",
+  callback = function()
+    vim.o.foldmethod = "manual" -- Or 'indent' or 'syntax'
+    vim.o.foldenable = false
+    -- You might need a UFO-specific command if the error persists
+    -- pcall(vim.cmd, [[ UfoDisable ]]) 
+  end,
+}) 
