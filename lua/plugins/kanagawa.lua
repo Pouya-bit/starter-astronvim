@@ -1,3 +1,5 @@
+if true then return {} end -- WARN: KANAGAWA THEME DISABLED, USING NORDIC INSTEAD
+
 return {
   "rebelot/kanagawa.nvim",
   lazy = false,
