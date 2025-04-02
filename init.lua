@@ -20,3 +20,13 @@ require "user.lsp_compat"
 
 require "lazy_setup"
 require "polish"
+
+-- Load and execute utils to fix missing dependencies
+vim.defer_fn(function()
+  local has_utils, utils = pcall(require, "user.utils")
+  if has_utils then
+    utils.install_missing_utils()
+    utils.install_tree_sitter_cli()
+    utils.install_jsonc_parser()
+  end
+end, 3000) -- delay for 3 seconds before attempting to install
