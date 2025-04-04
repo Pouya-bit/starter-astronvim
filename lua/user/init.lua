@@ -6,6 +6,14 @@ return {
     highlighturl = true,
     notifications = true,
   },
+  
+  -- Configure options
+  options = {
+    opt = {
+      guifont = "MapleMono Nerd Font:h10", -- Using the Nerd Font version of Maple Mono
+    },
+  },
+  
   -- Configure language specific options
   lsp = {
     -- enable servers that you already have installed without Mason
