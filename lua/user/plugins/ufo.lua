@@ -2,6 +2,16 @@ return {
   {
     "kevinhwang91/nvim-ufo",
     event = "BufReadPost",
+    enabled = function()
+      -- Only enable UFO if our fix has been applied
+      -- This ensures we don't load the plugin before our fixes are in place
+      local fix_applied = false
+      pcall(function()
+        local ufo_fix = require("user.ufo_fix")
+        fix_applied = true
+      end)
+      return fix_applied
+    end,
     dependencies = {
       "kevinhwang91/promise-async",
       "nvim-treesitter/nvim-treesitter",
@@ -14,9 +24,16 @@ return {
           return ''
         end
         
-        -- Always use LSP provider first, and fallback to indent if LSP is not available
-        -- Completely exclude treesitter to avoid the error
-        return {'lsp', 'indent'}
+        -- Check if LSP server is attached to this buffer
+        local has_lsp = false
+        pcall(function()
+          local clients = vim.lsp.get_active_clients({bufnr = bufnr})
+          has_lsp = #clients > 0
+        end)
+        
+        -- Always use LSP provider first if available, otherwise fallback to indent
+        -- Explicitly exclude treesitter from the list to avoid any chance of using it
+        return has_lsp and {'lsp', 'indent'} or {'indent'}
       end,
       
       -- Completely disable the built-in treesitter provider to prevent any calls to it
@@ -85,6 +102,15 @@ return {
       
       -- Using ufo provider need a reasonable updatetime
       vim.o.updatetime = 300
+      
+      -- Temporarily disable UFO to avoid errors on startup
+      -- This will be re-enabled after patching
+      pcall(vim.cmd, [[ UfoDisable ]])
+      
+      -- Schedule re-enabling UFO after patching is done
+      vim.defer_fn(function()
+        pcall(vim.cmd, [[ UfoEnable ]])
+      end, 1000)
     end,
     config = function(_, opts)
       -- Direct patch for the treesitter provider file
@@ -98,10 +124,14 @@ return {
         -- Look for the problematic line (around line 177) and add a safety check
         local patched = false
         for i, line in ipairs(file_content) do
-          -- Find the line where `range` is called and might be nil
-          if line:match("range%(") and not line:match("if%s+[^%s]+%s+and%s+[^%s]+%.range") then
+          -- Find all lines where the range method is called
+          if line:match("[%w_%.]+%.range%(") then
             -- Add a nil check before the .range call
-            file_content[i] = line:gsub("([%w_]+)%.range", "(%1 and %1.range or function() return 0, 0 end)")
+            local new_line = line:gsub("([%w_%.]+)%.range%(",
+                                      function(var)
+                                        return string.format("(%s and %s.range or function() return 0, 0 end)(", var, var)
+                                      end)
+            file_content[i] = new_line
             patched = true
           end
         end
@@ -121,48 +151,68 @@ return {
       end
       
       -- Override the treesitter provider module to prevent errors
-      local original_provider
-      -- Try to require or access loaded module
-      pcall(function()
-        original_provider = package.loaded["ufo.provider.treesitter"]
-        if not original_provider then
-          original_provider = require("ufo.provider.treesitter")
-        end
-      end)
-      
-      if original_provider then
-        -- Add safety wrapper around every method that might be called
-        for k, v in pairs(original_provider) do
-          if type(v) == "function" then
-            original_provider[k] = function(...)
-              local ok, result = pcall(v, ...)
-              if not ok then
-                -- On error, return empty result
-                return {}
-              end
-              return result
+      local function override_treesitter_provider()
+        -- Make sure the package is loaded first
+        pcall(function() require("ufo.provider.treesitter") end)
+        
+        -- Get the loaded module
+        local original_provider = package.loaded["ufo.provider.treesitter"]
+        if not original_provider then return end
+        
+        -- Create a safe wrapper for the getFolds function which is the main entry point
+        local old_get_folds = original_provider.getFolds
+        original_provider.getFolds = function(bufnr, cb)
+          -- Call the original function with error handling
+          local status, result = pcall(function()
+            -- Immediate return if original function is not available
+            if type(old_get_folds) ~= "function" then
+              if cb then cb({}) end
+              return {}
             end
+            
+            -- Call with a protected callback
+            local called = false
+            old_get_folds(bufnr, function(ranges)
+              called = true
+              if cb then cb(ranges or {}) end
+            end)
+            
+            -- Handle if callback was never called
+            vim.defer_fn(function()
+              if not called and cb then
+                cb({})
+              end
+            end, 100)
+          end)
+          
+          -- If there was an error, return an empty result
+          if not status and cb then
+            cb({})
           end
         end
         
-        -- Specifically fix the range issue
-        if not original_provider.safeguarded then
-          -- Create a safe fallback for the range method
-          local old_exec = original_provider.exec or function() return {} end
-          original_provider.exec = function(...)
-            local success, result = pcall(old_exec, ...)
-            if not success then
-              -- Return empty result on error
-              vim.schedule(function()
-                vim.notify("UFO treesitter provider error suppressed", vim.log.levels.WARN)
-              end)
-              return {}
-            end
-            return result
-          end
-          original_provider.safeguarded = true
-        end
+        -- Mark as overridden to avoid duplicate patching
+        original_provider.safeguarded = true
       end
+      
+      -- Apply the override
+      override_treesitter_provider()
+      
+      -- Forcibly unregister treesitter provider
+      local function unregister_ts_provider()
+        -- Attempt to directly unregister the provider
+        pcall(function()
+          -- Access the internal registry if available
+          local registry = package.loaded["ufo.provider.registry"]
+          if registry and registry.providers then
+            -- Remove treesitter from the registry
+            registry.providers["treesitter"] = nil
+          end
+        end)
+      end
+      
+      -- Call unregister function
+      unregister_ts_provider()
       
       -- Setup UFO with error handling
       local setup_ok, err = pcall(ufo.setup, opts)

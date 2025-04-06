@@ -12,7 +12,19 @@ require("lazy").setup({
     },
   },
   { import = "community" },
+  {
+    "kevinhwang91/nvim-ufo",
+    cond = false, -- Prevent automatic loading by Lazy
+    init = function()
+      -- Apply UFO fix when this entry is processed
+      pcall(function()
+        local ufo_fix = require("user.ufo_fix")
+        ufo_fix.apply()
+      end)
+    end,
+  },
   { import = "plugins" },
+  { import = "plugins.vague" },
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
   install = { colorscheme = { "catppuccin", "habamax" } },

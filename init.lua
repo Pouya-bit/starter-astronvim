@@ -18,6 +18,14 @@ end
 -- Load compatibility fixes for deprecated functions
 require "user.lsp_compat"
 
+-- Apply UFO fix as early as possible
+vim.defer_fn(function()
+  pcall(function()
+    local ufo_fix = require "user.ufo_fix"
+    ufo_fix.apply()
+  end)
+end, 1000)
+
 require "lazy_setup"
 require "polish"
 
